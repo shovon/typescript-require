@@ -1,4 +1,5 @@
 var vm = require('vm');
+var os = require('os');
 var fs = require('fs');
 var path = require('path');
 
@@ -10,7 +11,9 @@ var options = {
   nodeLib: false,
   targetES5: true,
   moduleKind: 'commonjs',
-  exitOnError: true
+  exitOnError: true,
+  rootDir: null,
+  noImplicitAny: false
 };
 
 module.exports = function(opts) {
@@ -40,10 +43,10 @@ function isModified(tsname, jsname) {
  */
 function compileTS (module) {
   var exitCode = 0;
-  var tmpDir = path.join(process.cwd(), "tmp", "tsreq");
+  var tmpDir = path.join(os.tmpdir(), "tsreq");
   var relativeFolder = path.dirname(path.relative(process.cwd(), module.filename));
   var jsname = path.join(tmpDir, relativeFolder, path.basename(module.filename, ".ts") + ".js");
-  
+
   if (!isModified(module.filename, jsname)) {
     return jsname;
   }
@@ -51,13 +54,13 @@ function compileTS (module) {
   var argv = [
     "node",
     "tsc.js",
-    "--nolib",
-    "--target",
-    options.targetES5 ? "ES5" : "ES3", !! options.moduleKind ? "--module" : "", !! options.moduleKind ? options.moduleKind : "",
+    options.noImplicitAny ? "--noImplicitAny" : "",
+    !!options.rootDir ? "--rootDir": "", !!options.rootDir ? options.rootDir : "",
+    !!options.moduleKind ? "--module" : "", !!options.moduleKind ? options.moduleKind : "",
     "--outDir",
-    path.join(tmpDir, relativeFolder),
+    tmpDir,
     libPath,
-    options.nodeLib ? path.resolve(__dirname, "typings/node.d.ts") : null,
+    options.nodeLib ? path.resolve(__dirname, "typings/node.d.ts") : "",
     module.filename
   ];
 
